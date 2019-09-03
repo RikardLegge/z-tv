@@ -10,22 +10,18 @@ const QRCode = require('qrcode');
 const CircularProgress = require('@material-ui/core/CircularProgress').default;
 
 const EMPTY = {};
-function SwishView({goBack, setHidden, hidden}) {
+function SwishView({goBack, hidden}) {
   const [warning, setWarning] = useState(null);
   const [state, setState] = useState(EMPTY);
   const [amount, setAmount] = useState(0);
 
   useEffect(()=>{
-    const clear = () => {
-      goBack();
-      setHidden(true);
-    };
-    let delay = 60000;
+    let delay = 10000;
     if(state.paying) return;
-    if(state.paid) delay = 10000;
-    const key = setTimeout(clear, delay);
+    if(state.qr) delay = 60000;
+    const key = setTimeout(goBack, delay);
     return ()=> clearTimeout(key);
-  }, [amount, warning]);
+  }, [amount, state]);
 
   useCardReader( (card)=>{
     if(state === EMPTY && amount >= 50 && amount <= 500) {
@@ -64,25 +60,15 @@ function SwishView({goBack, setHidden, hidden}) {
       if(key === "Backspace") return setState(EMPTY);
       return;
     }
-
-    const number = Number.parseInt(key);
-    if(!Number.isNaN(number)) {
-      const newAmount = amount * 10 + number;
-      if(amount === 0) return setAmount(number);
-      return setAmount(newAmount);
-    }
-
-    switch(key) {
-      case "Enter": {
-        let money = amount;
-        if (money < 50) return;
-        if (money > 500) return;
-
-
-        return;
+    if(state === EMPTY) {
+      const number = Number.parseInt(key);
+      if (!Number.isNaN(number)) {
+        const newAmount = amount * 10 + number;
+        if (amount === 0) return setAmount(number);
+        return setAmount(newAmount);
       }
-      case "Backspace": {
-        if(amount === 0) return goBack();
+      if (key === "Backspace") {
+        if (amount === 0) return goBack();
         const newAmount = Math.floor(amount / 10);
         return setAmount(newAmount);
       }
@@ -164,6 +150,7 @@ function QR({qr, amount}) {
 const chargeStyle = {
   ...style.fill,
   ...style.gray,
+  display: "block",
   padding: "20px"
 };
 function Charge({amount}) {

@@ -1,6 +1,6 @@
 const SerialPort = require('serialport');
 const Readline = require('@serialport/parser-readline');
-const { useEffect } = require('react');
+const { useEffect, useState } = require('react');
 const crypto = require('crypto');
 
 class CardReader {
@@ -30,34 +30,45 @@ class CardReader {
         return this.scheduleListen(fn);
       }
 
-      const cardReader = new SerialPort(cardReaderPort.comName, {baudRate: 115200});
-      if(!cardReader) {
-        console.log("Could not connect to device, trying to connect again in 10 seconds");
-        return this.scheduleListen(fn);
-      }
+      const cardReader = new SerialPort(cardReaderPort.comName, {baudRate: 115200, autoOpen: false });
+      cardReader.open((err) => {
+        if (err) {
+          console.log("Could not connect to device, trying to connect again in 10 seconds");
+          return this.scheduleListen(fn);
+        }
+        this.reader = cardReader;
+        console.log("Connected to card reader!");
 
-      console.log("Connected to card reader!");
-      const parser = new Readline();
-      cardReader.pipe(parser);
-      parser.on('data', line => {
-        line = line.trim();
-        if(line === "") return;
-        if(line === ">") return;
-        if(line.indexOf("ERR") === 0) return;
-        const hash = crypto.createHash('sha256')
-          .update(line)
-          .digest('hex');
-        console.log(`Read card \nNumber: ${line} \nHash: ${hash}`);
-        fn(hash);
+        cardReader.on('close', () => {
+          if(!this.reader) return;
+          console.log("The card reader port was closed, trying to connect again in 10 seconds");
+          this.reader = null;
+          this.scheduleListen(fn);
+        });
+
+        const parser = new Readline();
+        cardReader.pipe(parser);
+        parser.on('data', line => {
+          line = line.trim();
+          if(line === "") return;
+          if(line === ">") return;
+          if(line.indexOf("ERR") === 0) return;
+          const hash = crypto.createHash('sha256')
+            .update(line)
+            .digest('hex');
+          console.log(`Read card \nNumber: ${line} \nHash: ${hash}`);
+          fn(hash);
+        });
       });
     });
   }
 
   unListen() {
     if(this.reader) {
-      console.log("Disconnecting from card reader...");
-      this.reader.close();
+      const reader = this.reader;
       this.reader = null;
+      console.log("Disconnecting from card reader...");
+      reader.close();
       console.log("Disconnected!");
     }
   }

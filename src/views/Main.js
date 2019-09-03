@@ -26,9 +26,10 @@ function Popup() {
   const [hidden, setHidden] = useState(true);
   const [view, setView] = useState("shop");
   if(view === "swish")
-    return html`<${SwishView} goBack=${()=>setView("shop")} 
-                              hidden=${hidden} 
-                              setHidden=${setHidden}/>`;
+    return html`<${SwishView} hidden=${hidden} goBack=${()=>{
+      setHidden(true);
+      setView("shop");
+    }}/>`;
   return html`<${ShoppingView} goBack=${()=>setView("swish")}
                                hidden=${hidden}
                                setHidden=${setHidden}/>`;
