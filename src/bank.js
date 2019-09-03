@@ -4,15 +4,7 @@ const account = require("../account.json");
 
 let db;
 async function connectToFirebase() {
-  const app = firebase.initializeApp({
-    apiKey: "AIzaSyAwa0joU0ahF4vlS3eGFdrJ2M2EG_AL4Uw",
-    authDomain: "make-zkk-white-again.firebaseapp.com",
-    databaseURL: "https://make-zkk-white-again.firebaseio.com",
-    projectId: "make-zkk-white-again",
-    storageBucket: "make-zkk-white-again.appspot.com",
-    messagingSenderId: "47546004376",
-    appId: "1:47546004376:web:da05c646fcb11891"
-  });
+  const app = firebase.initializeApp(account.app);
   await firebase.auth().signInWithEmailAndPassword(account.email, account.password);
   db = app.firestore();
   console.log("connected to database")
