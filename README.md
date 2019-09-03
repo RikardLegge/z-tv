@@ -1,3 +1,3 @@
 # z-tv
 
-For use on the Z-TV. Might be usefull.
+For use on the Z-TV.
