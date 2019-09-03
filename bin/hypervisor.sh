@@ -5,7 +5,7 @@ cd "$(dirname "$0")"
 
 while :
 do
-	sleep 10
+	sleep 120
   if git checkout master &&
      git fetch origin master &&
      [ `git rev-list HEAD...origin/master --count` != 0 ]
