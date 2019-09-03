@@ -4,6 +4,7 @@ const account = require("../account.json");
 
 let db;
 async function connectToFirebase() {
+  console.log("connecting to database...");
   const app = firebase.initializeApp(account.app);
   await firebase.auth().signInWithEmailAndPassword(account.email, account.password);
   db = app.firestore();

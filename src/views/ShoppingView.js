@@ -43,9 +43,9 @@ function ShoppingView({goBack, setHidden, hidden}) {
 
   useCardReader( async (card)=>{
     if(cart.isEmpty()) return;
+    if(state !== EMPTY) return;
 
     const price = cart.price();
-    setCart(new Cart());
     try {
       setState({paying: true});
       const balance = await bank.pay(card, price);
@@ -59,7 +59,7 @@ function ShoppingView({goBack, setHidden, hidden}) {
   useKeyboard((key)=>{
     function addToCart(tp) {
       let newCart = cart;
-      if(state.canceled) {
+      if(state.canceled || state.paid) {
         newCart = new Cart();
       }
       newCart.add(tp);
@@ -124,16 +124,13 @@ function Failed() {
 
 const payingStyle = {
   ...style.fill,
-  ...style.gray,
-};
-const loadingStyle = {
-  color: "white",
+  ...style.white
 };
 function Paying() {
   return html`
     <div style=${payingStyle}>
       <div style=${style.center}>
-        <${CircularProgress} style=${loadingStyle}/>
+        <${CircularProgress} />
       </div>
     </div>
   `;
@@ -141,15 +138,23 @@ function Paying() {
 
 const paidStyle = {
   ...style.fill,
+  ...style.white,
+};
+const paidBoxStyle = {
   ...style.green,
+  ...style.box,
 };
 function Paid({paid}) {
   return html`
-    <div style=${paidStyle}>
-      <${Typography}>Hoppas kaffet smakar!<//>
-      <${Typography}>Betalt: ${paid.price} kr<//>
-      <${Typography}>Kontobalans: ${paid.balance} kr<//>
-    </div>
+    <${Fragment}>
+      <div style=${paidStyle}>
+        <${Typography} variant="h2">${paid.balance} kr<//>
+      </div>
+      <div style=${paidBoxStyle}>
+        <${Typography}>Hoppas kaffet smakar!<//>
+        <${Typography}>Du har kvar följande belopp på kontot<//>
+      </div>
+    <//>
   `;
 }
 

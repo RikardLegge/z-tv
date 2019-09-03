@@ -27,7 +27,7 @@ function SwishView({goBack, hidden}) {
     if(state === EMPTY && amount >= 50 && amount <= 500) {
       const phone = "1234739561";
       const message = `ZKK laddning ${card}`.replace(/ /, "+");
-      QRCode.toDataURL(`C${phone};${amount};${message};0`, (err, code) => {
+      QRCode.toDataURL(`C${phone};${amount};${message};0`,{} ,(err, code) => {
         if (err) return setState({failed: err});
         setState({qr:{code, card}});
       });
@@ -35,8 +35,8 @@ function SwishView({goBack, hidden}) {
   });
 
   useEffect(()=>{
-    if(amount > 500) setWarning("Vänligen sätt inte in mer än 500kr i taget. Du må dricka mycket kaffe men tänk på ZKK");
-    else if(amount < 50) setWarning("Vänligen ladda kortet med iallafall 50kr");
+    if(amount > 500) setWarning("Högsta laddningsbeloppet är 500kr");
+    else if(amount < 50) setWarning("Minsta laddningsbeloppet är 50kr");
     else setWarning(null);
   }, [amount]);
 
@@ -79,7 +79,7 @@ function SwishView({goBack, hidden}) {
     <${Paper} style=${style.paper(!hidden)}>
       <${Body}/>
       ${state === EMPTY && html`<${Charge} amount=${amount}/>`}
-      ${state.qr && html`<${QR} qr=${state.qr.code}/>`}
+      ${state.qr && html`<${QR} qr=${state.qr.code} amount=${amount}/>`}
       ${state.paid && html`<${Paid} paid=${state.paid}/>`}
       ${state.paying && html`<${Paying}/>`}
       ${state.failed && html`<${Failed}/>`}
@@ -103,70 +103,80 @@ function Failed() {
   `;
 }
 
-const payingStyle = {
-  ...style.fill,
-  ...style.gray,
-};
-const loadingStyle = {
-  color: "white",
-};
 function Paying() {
   return html`
-    <div style=${payingStyle}>
+    <div style=${style.fill}>
       <div style=${style.center}>
-        <${CircularProgress} style=${loadingStyle}/>
+        <${CircularProgress}/>
       </div>
     </div>
   `;
 }
 
-const paidStyle = {
-  ...style.fill,
+const paidBoxStyle = {
   ...style.green,
+  ...style.box,
 };
 function Paid({paid}) {
   return html`
-    <div style=${paidStyle}>
-      <${Typography}>Grattis, Ditt kort är nu laddat!<//>
-      <${Typography}>Betalt: ${paid.amount} kr<//>
-      <${Typography}>Kontobalans: ${paid.balance} kr<//>
-    </div>
+    <${Fragment}>
+      <div style=${style.fill}>
+        <${Typography} variant="h2">${paid.balance} kr<//>
+      </div>
+      <div style=${paidBoxStyle}>
+        <${Typography}>Grattis! Ditt kort är nu laddat med följande belopp<//>
+      </div>
+    <//>
   `;
 }
 
 const qrStyle = {
-  marginTop: "10px"
+  ...style.fill,
+  justifyContent: "top",
+  padding: "20px"
+};
+const qrImageStyle = {
+  height: "150px",
+};
+const qrBoxStyle = {
+  ...style.gray,
+  ...style.box,
 };
 function QR({qr, amount}) {
   return html`
-    <div style=${chargeStyle}>
-      <${Typography}>Vänligen skanna QR koden med swish. Tryck på ENTER när betalningen är gjord<//>
-      <${Typography}>Pris: ${amount}<//>
-      ${qr && html`<img src=${qr} style=${qrStyle}/>`}
-    </div>
+    <${Fragment}>
+      <div style=${qrStyle}>
+        ${qr && html`<img style=${qrImageStyle} src=${qr}/>`}
+        <${Typography} variant="h2">${amount} kr<//>
+      </div>
+      <div style=${qrBoxStyle}>
+        <${Typography} style=${style.center}>Betala genom att scanna QR koden med swish. Tryck sedan på ENTER<//>
+      </div>
+    <//>
   `;
 }
 
 const chargeStyle = {
   ...style.fill,
-  ...style.gray,
   display: "block",
   padding: "20px"
+};
+const chargePriceStyle = {
+  ...style.center,
+  marginTop: "78px",
 };
 function Charge({amount}) {
   return html`
     <div style=${chargeStyle}>
-      <${Typography}>Vänligen slå in så mycket som du velat ladda kortet med och lägg kotet mot läsaren för att påbörja laddningen<//>
-      <${Typography}>Ladding: ${amount} kr<//>
+      <${Typography} style=${style.center}>Vänligen slå in så mycket som du velat ladda kortet med och visa sedan upp ditt kort för läsaren<//>
+      <${Typography} variant="h2" style=${chargePriceStyle}>${amount} kr<//>
     </div>
   `;
 }
 
 const warningStyle = {
   ...style.orange,
-  padding: "20px",
-  position: "absolute",
-  bottom: 0,
+  ...style.box,
 };
 function Warning({warning}) {
   if(!warning) return null;
@@ -178,9 +188,9 @@ function Warning({warning}) {
 }
 
 const bodyStyle = {
-  ...style.gray,
-  width: "300px",
-  height: "300px",
+  // ...style.gray,
+  width: "320px",
+  height: "320px",
 };
 function Body() {
   return html`<div style=${bodyStyle}/>`;
