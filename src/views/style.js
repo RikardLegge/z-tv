@@ -49,5 +49,5 @@ module.exports.paper = (show=true)=>({
   margin: "20px",
   Width: 300 + "px",
   minHeight: "60px",
-  transition: "opacity 1s ease"
+  transition: "opacity 0.3s ease"
 });
