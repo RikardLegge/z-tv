@@ -55,7 +55,8 @@ class CardReader {
           if(line.indexOf("ERR") === 0) return;
           const hash = crypto.createHash('sha256')
             .update(line)
-            .digest('hex');
+            .digest('hex')
+            .substr(0, 16);
           console.log(`Read card \nNumber: ${line} \nHash: ${hash}`);
           fn(hash);
         });
