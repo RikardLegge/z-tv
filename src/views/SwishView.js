@@ -16,60 +16,69 @@ function SwishView({goBack, setHidden, hidden}) {
   const [amount, setAmount] = useState(0);
 
   useEffect(()=>{
-    const clear = () => setHidden(true);
-    const key = setTimeout(clear, 60000);
+    const clear = () => {
+      goBack();
+      setHidden(true);
+    };
+    let delay = 60000;
+    if(state.paying) return;
+    if(state.paid) delay = 10000;
+    const key = setTimeout(clear, delay);
     return ()=> clearTimeout(key);
   }, [amount, warning]);
 
-  useCardReader( async (card)=>{
-    if(state.qr) {
-      try {
-        setState({paying: true});
-        const balance  = await bank.pay(card, -amount);
-        setState({paid: {balance, amount}})
-      } catch(err) {
-        console.error(err);
-        setState({failed: err})
-      }
+  useCardReader( (card)=>{
+    if(state === EMPTY && amount >= 50 && amount <= 500) {
+      const phone = "1234739561";
+      const message = `ZKK laddning ${card}`.replace(/ /, "+");
+      QRCode.toDataURL(`C${phone};${amount};${message};0`, (err, code) => {
+        if (err) return setState({failed: err});
+        setState({qr:{code, card}});
+      });
     }
   });
 
-  useKeyboard((key)=>{
+  useEffect(()=>{
+    if(amount > 500) setWarning("Vänligen sätt inte in mer än 500kr i taget. Du må dricka mycket kaffe men tänk på ZKK");
+    else if(amount < 50) setWarning("Vänligen ladda kortet med iallafall 50kr");
+    else setWarning(null);
+  }, [amount]);
+
+  useKeyboard(async (key)=>{
     console.log(key);
-    setWarning(null);
+
+    if(state.paying) return;
+    if(state.failed) return goBack();
+    if(state.paid) return goBack();
     if(state.qr) {
-      switch(key) {
-        case "Enter": {
-          return;
-        }
-        case "Backspace": {
-          return setState(EMPTY);
+      if(key === "Enter") {
+        try {
+          setState({paying: true});
+          const balance = await bank.pay(state.qr.card, -amount);
+          setState({paid: {balance, amount}})
+        } catch (err) {
+          console.error(err);
+          setState({failed: err})
         }
       }
+      if(key === "Backspace") return setState(EMPTY);
+      return;
     }
 
-    let number = Number.parseInt(key);
+    const number = Number.parseInt(key);
     if(!Number.isNaN(number)) {
-      if(amount === 0) return setAmount(number);
       const newAmount = amount * 10 + number;
-      if(newAmount > 500) setWarning("Endast 500kr kommer att sättas in på ditt konto");
+      if(amount === 0) return setAmount(number);
       return setAmount(newAmount);
     }
 
     switch(key) {
       case "Enter": {
         let money = amount;
-        if (money < 50) {
-          return setWarning("Du måste ladda kortet med iallafall 50kr");
-        }
-        if (money > 500) {
-          money = 500;
-        }
-        const phone = "0702005536";
-        const message = "Till Zkk och vidare".replace(/ /, "+");
-        QRCode.toDataURL(`C${phone};${money};${message};0`, function (err, qr) {
-          setState({qr});
-        });
+        if (money < 50) return;
+        if (money > 500) return;
+
+
         return;
       }
       case "Backspace": {
@@ -83,20 +92,19 @@ function SwishView({goBack, setHidden, hidden}) {
   return html`
     <${Paper} style=${style.paper(!hidden)}>
       <${Body}/>
-      <${Warning}/>
       ${state === EMPTY && html`<${Charge} amount=${amount}/>`}
-      ${state.qr && html`<${QR} qr=${state.qr}/>`}
+      ${state.qr && html`<${QR} qr=${state.qr.code}/>`}
       ${state.paid && html`<${Paid} paid=${state.paid}/>`}
       ${state.paying && html`<${Paying}/>`}
       ${state.failed && html`<${Failed}/>`}
+      <${Warning} warning=${warning}/>
     <//>
     `;
 }
 
 const canceledStyled = {
   ...style.fill,
-  background: "rgb(180,0,0,0.95)",
-  color: "white",
+  ...style.red,
 };
 function Failed() {
   return html`
@@ -126,9 +134,13 @@ function Paying() {
   `;
 }
 
+const paidStyle = {
+  ...style.fill,
+  ...style.green,
+};
 function Paid({paid}) {
   return html`
-    <div style=${payingStyle}>
+    <div style=${paidStyle}>
       <${Typography}>Grattis, Ditt kort är nu laddat!<//>
       <${Typography}>Betalt: ${paid.amount} kr<//>
       <${Typography}>Kontobalans: ${paid.balance} kr<//>
@@ -136,11 +148,15 @@ function Paid({paid}) {
   `;
 }
 
-function QR({qr}) {
+const qrStyle = {
+  marginTop: "10px"
+};
+function QR({qr, amount}) {
   return html`
     <div style=${chargeStyle}>
-      <${Typography}>Lägg ditt kort på läsaren när du är färdig med swishen för att föra in pengarna på ditt konto<//>
-      ${qr && html`<img src=${qr}/>`}
+      <${Typography}>Vänligen skanna QR koden med swish. Tryck på ENTER när betalningen är gjord<//>
+      <${Typography}>Pris: ${amount}<//>
+      ${qr && html`<img src=${qr} style=${qrStyle}/>`}
     </div>
   `;
 }
@@ -153,15 +169,17 @@ const chargeStyle = {
 function Charge({amount}) {
   return html`
     <div style=${chargeStyle}>
-      <${Typography}>Vänligen slå in så mycket som du velat ladda korted med: [50, 500]kr<//>
-      <${Typography}>${amount} kr<//>
+      <${Typography}>Vänligen slå in så mycket som du velat ladda kortet med och lägg kotet mot läsaren för att påbörja laddningen<//>
+      <${Typography}>Ladding: ${amount} kr<//>
     </div>
   `;
 }
 
 const warningStyle = {
-  ...style.gray,
-  padding: "20px"
+  ...style.orange,
+  padding: "20px",
+  position: "absolute",
+  bottom: 0,
 };
 function Warning({warning}) {
   if(!warning) return null;

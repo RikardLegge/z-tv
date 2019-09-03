@@ -26,7 +26,7 @@ function ShoppingView({goBack, setHidden, hidden}) {
 
     if(state === EMPTY) return;
     if(state.paying) return;
-    const key = setTimeout(clearMessage, 1000);
+    const key = setTimeout(clearMessage, 10000);
     return ()=> clearTimeout(key);
   });
 
@@ -37,7 +37,7 @@ function ShoppingView({goBack, setHidden, hidden}) {
 
     if(state !== EMPTY) return;
     if(state.paying) return;
-    const key = setTimeout(clearMessage, 6000);
+    const key = setTimeout(clearMessage, 60000);
     return () => clearTimeout(key);
   });
 
@@ -73,7 +73,7 @@ function ShoppingView({goBack, setHidden, hidden}) {
       case "1": return addToCart(products.Coffee);
       case "2": return addToCart(products.Kettle);
       case "3": return addToCart(products.Cookie);
-      case "Clear": {
+      case "+": {
         setCart(new Cart());
         setState(EMPTY);
         setHidden(false);
@@ -100,8 +100,7 @@ function ShoppingView({goBack, setHidden, hidden}) {
 
 const canceledStyled = {
   ...style.fill,
-  background: "rgb(180,0,0,0.95)",
-  color: "white",
+  ...style.red,
 };
 function Canceled() {
   return html`
@@ -140,9 +139,13 @@ function Paying() {
   `;
 }
 
+const paidStyle = {
+  ...style.fill,
+  ...style.green,
+};
 function Paid({paid}) {
   return html`
-    <div style=${payingStyle}>
+    <div style=${paidStyle}>
       <${Typography}>Hoppas kaffet smakar!<//>
       <${Typography}>Betalt: ${paid.price} kr<//>
       <${Typography}>Kontobalans: ${paid.balance} kr<//>

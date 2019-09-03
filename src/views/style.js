@@ -17,6 +17,18 @@ module.exports.gray = {
   background: "rgba(150, 150, 150, 0.95",
   color: "white",
 };
+module.exports.green = {
+  background: "rgba(0, 180, 0, 0.95",
+  color: "white",
+};
+module.exports.red = {
+  background: "rgba(180, 0, 0, 0.95",
+  color: "white",
+};
+module.exports.orange = {
+  background: "rgba(255, 165, 0, 0.95",
+  color: "white",
+};
 module.exports.paper = (show=true)=>({
   opacity: show ? 1 : 0,
   position: "absolute",
