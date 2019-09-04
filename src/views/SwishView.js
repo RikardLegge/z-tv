@@ -9,6 +9,9 @@ const style = require('./style');
 const QRCode = require('qrcode');
 const CircularProgress = require('@material-ui/core/CircularProgress').default;
 
+const minAmount = 20;
+const maxAmount = 100;
+
 const EMPTY = {};
 function SwishView({goBack, hidden}) {
   const [warning, setWarning] = useState(null);
@@ -24,7 +27,7 @@ function SwishView({goBack, hidden}) {
   }, [amount, state]);
 
   useCardReader( (card)=>{
-    if(state === EMPTY && amount >= 50 && amount <= 500) {
+    if(state === EMPTY && amount >= minAmount && amount <= maxAmount) {
       const phone = "1234739561";
       const message = `ZKK laddning ${card}`.replace(/ /, "+");
       QRCode.toDataURL(`C${phone};${amount};${message};0`,{} ,(err, code) => {
@@ -35,8 +38,8 @@ function SwishView({goBack, hidden}) {
   });
 
   useEffect(()=>{
-    if(amount > 500) setWarning("Högsta laddningsbeloppet är 500kr");
-    else if(amount < 50) setWarning("Minsta laddningsbeloppet är 50kr");
+    if(amount > maxAmount) setWarning(`Högsta laddningsbeloppet är ${maxAmount}kr`);
+    else if(amount < minAmount) setWarning(`Minsta laddningsbeloppet är ${minAmount}kr`);
     else setWarning(null);
   }, [amount]);
 
@@ -47,7 +50,7 @@ function SwishView({goBack, hidden}) {
     if(state.failed) return goBack();
     if(state.paid) return goBack();
     if(state.qr) {
-      if(key === "Enter") {
+      if(key === "+") {
         try {
           setState({paying: true});
           const balance = await bank.pay(state.qr.card, -amount);
@@ -150,7 +153,8 @@ function QR({qr, amount}) {
         <${Typography} variant="h2">${amount} kr<//>
       </div>
       <div style=${qrBoxStyle}>
-        <${Typography} style=${style.center}>Betala genom att scanna QR koden med swish. Tryck sedan på ENTER<//>
+        <${Typography} style=${style.center}>Betala genom att scanna QR koden med swish. Tryck sedan på LADDA<//>
+        <${Typography} style=${style.center}>Vi kollar inte om du har betalat utan litar på dig! ❤️<//>
       </div>
     <//>
   `;
