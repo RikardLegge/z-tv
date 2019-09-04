@@ -1,7 +1,8 @@
 const SerialPort = require('serialport');
 const Readline = require('@serialport/parser-readline');
-const { useEffect, useState } = require('react');
+const { useEffect } = require('react');
 const crypto = require('crypto');
+const {isDev} = require('./config');
 
 class CardReader {
   constructor() {
@@ -88,4 +89,19 @@ function useCardReader(fn) {
   });
 }
 
+function mockUseCardReader(fn) {
+  useEffect(() => {
+    function cb (event) {
+      if(event.key !== "!") return;
+      event.preventDefault();
+      fn("123abc");
+    }
+    document.body.addEventListener("keydown", cb);
+    return ()=>document.body.removeEventListener("keydown", cb);
+  });
+}
+
 module.exports = {useCardReader, CardReader};
+if(isDev) {
+  module.exports.useCardReader = mockUseCardReader;
+}

@@ -3,6 +3,8 @@ const { Fragment, useState } = require('react');
 const SlidesView = require('./SlidesView');
 const ShoppingView = require('./ShoppingView');
 const SwishView = require('./SwishView');
+const Paper = require('@material-ui/core/Paper').default;
+const style = require("./style");
 
 const fillStyle = {
   position: "absolute",
@@ -25,14 +27,23 @@ function Main() {
 function Popup() {
   const [hidden, setHidden] = useState(true);
   const [view, setView] = useState("shop");
-  if(view === "swish")
-    return html`<${SwishView} hidden=${hidden} goBack=${()=>{
+
+  let htmlView;
+  if(view === "swish") {
+    htmlView = html`<${SwishView} hidden=${hidden} goBack=${() => {
       setHidden(true);
-      setView("shop");
+      setTimeout(()=>setView("shop"), 300);
     }}/>`;
-  return html`<${ShoppingView} goBack=${()=>setView("swish")}
-                               hidden=${hidden}
-                               setHidden=${setHidden}/>`;
+  } else {
+    htmlView = html`<${ShoppingView} setHidden=${setHidden} goToSwish=${() => {
+      setView("swish")
+    }}/>`;
+  }
+
+  return html`
+    <${Paper} style=${style.paper(!hidden)}>
+      ${htmlView}
+    <//>`;
 }
 
 module.exports = Main;

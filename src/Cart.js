@@ -1,8 +1,9 @@
 class CartItemType {
-  constructor(name, price, icon) {
+  constructor(name, price, icon, maxCount) {
     this.name = name;
     this.price = price;
     this.icon = icon;
+    this.maxCount = maxCount;
   }
 }
 
@@ -14,6 +15,10 @@ class CartItem {
 
   price() {
     return this.count * this.tp.price;
+  }
+
+  isMax() {
+    return this.count >= this.tp.maxCount;
   }
 }
 
@@ -36,11 +41,13 @@ class Cart {
   add(tp) {
     for(const item of this.items) {
       if(tp === item.tp) {
+        if(item.isMax()) return false;
         item.count++;
-        return;
+        return true;
       }
     }
     this.items.push(new CartItem(1, tp));
+    return true;
   }
 
   price(){

@@ -1,6 +1,7 @@
 const firebase = require("firebase");
 const {Timestamp} = firebase.firestore;
 const account = require("../account.json");
+const {isDev} = require('./config');
 
 let db;
 async function connectToFirebase() {
@@ -40,4 +41,11 @@ async function pay(cardNumber, amount) {
   return data.balance;
 }
 
+async function mockPay(cardNumber, amount) {
+  return 2*amount;
+}
+
 module.exports = {pay};
+if(isDev) {
+  module.exports.pay = mockPay;
+}
