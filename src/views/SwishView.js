@@ -144,6 +144,7 @@ function Charge({amount, setState, setAmount}) {
       const code = await generateSwishCode(card, amount);
       setState({qr: {code, card}});
     } catch(err) {
+      console.error(err);
       setState({failed: err})
     }
   });

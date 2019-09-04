@@ -15,7 +15,7 @@ const {useKeyboard} = require('../keyboard');
 const style = require("./style");
 
 const EMPTY = {add: true};
-function ShoppingView({goToSwish, setHidden}) {
+function ShoppingView({goTo, setHidden}) {
   const [cart, setCart] = useState(new Cart());
   const [state, setState] = useState(EMPTY);
 
@@ -49,11 +49,18 @@ function ShoppingView({goToSwish, setHidden}) {
         setCart(new Cart());
         setState(EMPTY);
         setHidden(false);
-        return goToSwish();
+        return goTo("swish");
+      }
+      case "#": {
+        setCart(new Cart());
+        setState(EMPTY);
+        setHidden(false);
+        return goTo("transfer");
       }
       case "Backspace": {
         if(cart.isEmpty()) return;
         if(state.canceled) return setHidden(true);
+        if(state.paid) return setHidden(true);
         return setState({canceled: true});
       }
     }

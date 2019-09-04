@@ -13,8 +13,9 @@ function keymap(key) {
     "9": ["9"],
     "0": ["0"],
     "+": ["+"],
+    "#": ["#"],
     "Enter": ["enter"],
-    "Backspace": ["p", "å", "¨", "ö", "ä", "'", ".", "-"],
+    "Backspace": ["p", "å", "¨", "ö", "ä", "'", ".", "-", "backspace"],
   };
   key = key.toLowerCase();
 
@@ -39,6 +40,7 @@ function useKeyboard(fn) {
       debounce = true;
       setTimeout(()=>debounce = false, 250);
 
+      console.log(key);
       fn(key);
     }
     document.body.addEventListener("keydown", keyDown);

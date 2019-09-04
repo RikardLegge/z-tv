@@ -3,6 +3,7 @@ const { Fragment, useState } = require('react');
 const SlidesView = require('./SlidesView');
 const ShoppingView = require('./ShoppingView');
 const SwishView = require('./SwishView');
+const TransferView = require('./TransferView');
 const Paper = require('@material-ui/core/Paper').default;
 const style = require("./style");
 
@@ -28,16 +29,18 @@ function Popup() {
   const [hidden, setHidden] = useState(true);
   const [view, setView] = useState("shop");
 
+  function goToShop() {
+    setHidden(true);
+    setTimeout(() => setView("shop"), 300);
+  }
+
   let htmlView;
   if(view === "swish") {
-    htmlView = html`<${SwishView} hidden=${hidden} goBack=${() => {
-      setHidden(true);
-      setTimeout(()=>setView("shop"), 300);
-    }}/>`;
+    htmlView = html`<${SwishView} goBack=${goToShop}/>`;
+  } else if(view === "transfer") {
+    htmlView = html`<${TransferView} goBack=${goToShop}/>`
   } else {
-    htmlView = html`<${ShoppingView} setHidden=${setHidden} goToSwish=${() => {
-      setView("swish")
-    }}/>`;
+    htmlView = html`<${ShoppingView} setHidden=${setHidden} goTo=${setView}/>`;
   }
 
   return html`

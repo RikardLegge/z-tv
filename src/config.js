@@ -1,6 +1,5 @@
 module.exports = {
   minAmount: 50,
   maxAmount: 100,
-  hideDelay: 10000,
-  isDev: false
+  hideDelay: 10000
 };
