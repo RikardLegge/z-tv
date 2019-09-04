@@ -18,9 +18,10 @@ async function pay(cardNumber, amount) {
   }
   const card = db.collection(`cards`).doc(`${cardNumber}`);
   const cardSnapshot = await card.get();
+  const now = Timestamp.now();
   const data = {
     balance: -amount,
-    lastUsed: Timestamp.now(),
+    lastUsed: now,
     phone: "",
   };
 
@@ -38,6 +39,13 @@ async function pay(cardNumber, amount) {
   }
 
   await account.set({data});
+  const log = db.collection(`logs`).doc();
+  log.set({
+    timeStamp: now,
+    account: account,
+    amount: amount
+  }).catch(console.error);
+
   return data.balance;
 }
 

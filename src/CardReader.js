@@ -94,7 +94,7 @@ function mockUseCardReader(fn) {
     function cb (event) {
       if(event.key !== "!") return;
       event.preventDefault();
-      fn("123abc");
+      fn("test");
     }
     document.body.addEventListener("keydown", cb);
     return ()=>document.body.removeEventListener("keydown", cb);
