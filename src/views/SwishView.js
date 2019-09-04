@@ -139,7 +139,7 @@ const warningStyle = (show)=>({
 });
 function Charge({amount, setState, setAmount}) {
   useCardReader( async (card)=>{
-    if(amount >= minAmount && amount <= maxAmount) return;
+    if(amount < minAmount || amount > maxAmount) return;
     try {
       const code = await generateSwishCode(card, amount);
       setState({qr: {code, card}});
