@@ -47,7 +47,7 @@ function SwishView({goBack}) {
   <${Fragment}>
     <${Body}/>
     ${state.charge && html`<${Charge} amount=${amount} setAmount=${setAmount} setState=${set}/>`}
-    ${state.qr && html`<${QR} qr=${state.qr.code} amount=${amount} setState=${set}/>`}
+    ${state.qr && html`<${QR} qr=${state.qr} amount=${amount} setState=${set}/>`}
     ${state.paid && html`<${Paid} paid=${state.paid} goBack=${back}/>`}
     ${state.paying && html`<${Paying}/>`}
     ${state.failed && html`<${Failed} goBack=${back}/>`}
@@ -122,7 +122,7 @@ function QR({qr, amount, setState}) {
   return html`
     <div style=${style.overlay}>
       <div style=${style.centerH}>
-        ${qr && html`<img style=${qrImageStyle} src=${qr}/>`}
+        ${qr && html`<img style=${qrImageStyle} src=${qr.code}/>`}
       </div>
       <${Typography} variant="h2" style=${style.center}>${amount} kr<//>
       <div style=${qrBoxStyle}>
