@@ -30,8 +30,8 @@ async function join(cardNumber1, cardNumber2) {
     if (!account1D || !account2D) {
       throw new Error("Could not get account data");
     }
-    await payFromAccount(account1, -account2.balance);
-    await payFromAccount(account2, account2.balance);
+    await payFromAccount(account1, -account2D.balance);
+    await payFromAccount(account2, account2D.balance);
     await card2.set({account: account1});
   } else if (account1) {
     await card2.set({account: account1});
@@ -46,6 +46,9 @@ async function join(cardNumber1, cardNumber2) {
 }
 
 async function split(cardNumber1, cardNumber2) {
+  if(!cardNumber1) throw new Error("Card 1 invalid: "+ cardNumber1);
+  if(!cardNumber2) throw new Error("Card 2 invalid: "+ cardNumber2);
+
   if(!db) await connectToFirebase();
   const card1 = db.collection(`cards`).doc(`${cardNumber1}`);
   const card2 = db.collection(`cards`).doc(`${cardNumber2}`);
@@ -77,6 +80,7 @@ async function getAccountData(account) {
 
 async function setAccountBalance(account, balance) {
   const lastUsed = Timestamp.now();
+  if(Number.isNaN(balance)) throw new Error("Invalid balance: "+ balance);
   await account.set({lastUsed, balance});
   return balance;
 }
@@ -94,6 +98,7 @@ async function payFromAccount(account, amount) {
 }
 
 async function pay(cardNumber, amount) {
+  if(!cardNumber) throw new Error("Invalid card numbe: "+ cardNumber);
   if(!db) await connectToFirebase();
   const card = db.collection(`cards`).doc(`${cardNumber}`);
 
