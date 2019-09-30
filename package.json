@@ -1,5 +1,8 @@
 {
   "private": true,
+  "scripts": {
+    "start": "node cmd/exportReport.js > export.csv"
+  },
   "devDependencies": {
     "electron": "^6.0.7",
     "electron-rebuild": "^1.8.6"

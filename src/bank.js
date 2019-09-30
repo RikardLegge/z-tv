@@ -3,16 +3,20 @@ const {Timestamp} = firebase.firestore;
 const account = require("../account.json");
 
 let db;
-async function connectToFirebase() {
-  console.log("connecting to database...");
+async function connectToFirebase({quiet}={}) {
+  if(!quiet) console.log("connecting to database...");
   const app = firebase.initializeApp(account.app);
   await firebase.auth().signInWithEmailAndPassword(account.email, account.password);
   db = app.firestore();
-  console.log("connected to database")
+  if(!quiet) console.log("connected to database")
 }
 
 class AlreadyJoinedError extends Error {}
 class NotJoinedError extends Error {}
+
+function getDB() {
+  return db;
+}
 
 async function join(cardNumber1, cardNumber2) {
   if(!db) await connectToFirebase();
@@ -111,4 +115,4 @@ async function pay(cardNumber, amount) {
   return await payFromAccount(account, amount);
 }
 
-module.exports = {pay, join, split, AlreadyJoinedError, NotJoinedError};
+module.exports = {pay, join, split, AlreadyJoinedError, NotJoinedError, connectToFirebase, getDB};
