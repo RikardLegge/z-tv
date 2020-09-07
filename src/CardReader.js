@@ -86,17 +86,18 @@ function useCardReader(fn) {
     readerFn = fn;
     return ()=> {readerFn = ()=>{}};
   });
-  keyboardCardReader(fn);
+  useKeyboardCardReader(fn);
 }
 
-function keyboardCardReader(fn) {
+function useKeyboardCardReader(fn) {
   useEffect(() => {
     function cb (event) {
-      event.preventDefault();
       if(event.key === "!") {
+        event.preventDefault();
         fn("test");
       }
       if(event.key === "@") {
+        event.preventDefault();
         fn("test-2");
       }
     }

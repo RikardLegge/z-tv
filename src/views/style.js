@@ -17,7 +17,8 @@ module.exports.box = {
 };
 module.exports.layer = {
   display: "flex",
-  flexDirection: "column"
+  flexDirection: "column",
+  flex: "auto",
 };
 module.exports.overlay = {
   ...module.exports.layer,
@@ -30,6 +31,7 @@ module.exports.overlay = {
 module.exports.paper = (show=true)=>({
   opacity: show ? 1 : 0,
   position: "absolute",
+  overflow: "hidden",
   bottom: "0",
   left: "0",
   margin: "20px",

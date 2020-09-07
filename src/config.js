@@ -1,5 +1,6 @@
+const second = 1000;
 module.exports = {
-  minAmount: 50,
-  maxAmount: 100,
-  hideDelay: 10000
+  minAmount: 5,
+  maxAmount: 200,
+  hideDelay: 10*second
 };

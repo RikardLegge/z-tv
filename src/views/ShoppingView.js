@@ -9,121 +9,190 @@ const CircularProgress = require('@material-ui/core/CircularProgress').default;
 const {Cart} = require('../Cart');
 const products = require('../products');
 const {hideDelay} = require('../config');
-const {pay} = require('../bank');
+const {pay, cardBalance} = require('../bank');
 const {useCardReader} = require('../CardReader');
 const {useKeyboard} = require('../keyboard');
 const style = require("./style");
 
-const EMPTY = {add: true};
+const EMPTY = {};
 function ShoppingView({goTo, setHidden}) {
   const [cart, setCart] = useState(new Cart());
+  const [nextCart, setNextCart] = useState(null);
   const [state, setState] = useState(EMPTY);
 
   function addToCart(tp) {
-    let newCart = cart;
-    if(state.canceled || state.paid) {
-      newCart = new Cart();
-    }
+    let newCart = nextCart || cart;
     newCart.add(tp);
 
     setState(EMPTY);
     setHidden(false);
     setCart(new Cart(newCart));
+    setNextCart(null);
+  }
+
+  function set(key, value) {
+    switch(key){
+      case "loading": {
+        setHidden(false);
+        setState({loading: true});
+        break;
+      }
+      case "canceled": {
+        setState({canceled: true});
+        setNextCart(new Cart());
+        break;
+      }
+      case "balanceCheck": {
+        setState({balanceCheck: {balance: value}});
+        break;
+      }
+      case "paymentFailed": {
+        setState({paymentFailed: true});
+        setNextCart(new Cart());
+        break;
+      }
+      case "paid": {
+        setState({paid: value});
+        setNextCart(new Cart());
+        break;
+      }
+      default: {
+        setState(EMPTY);
+        setNextCart(new Cart());
+        setHidden(true);
+        break;
+      }
+    }
   }
 
   useEffect(()=>{
     let delay = hideDelay;
-    if(state.add) delay = 2*hideDelay;
-    if(state.paying) delay = 60*hideDelay;
+    if(state.add) delay = 6*hideDelay;
+    if(state.loading) delay = 60*hideDelay;
     const key = setTimeout(()=>setHidden(true), delay);
     return ()=> clearTimeout(key);
   });
 
   useKeyboard((key)=>{
-    if(state.paying) return;
+    if(state.loading) return;
     switch(key) {
       case "1": return addToCart(products.Coffee);
       case "2": return addToCart(products.Kettle);
       case "3": return addToCart(products.Cookie);
       case "+": {
-        setCart(new Cart());
-        setState(EMPTY);
+        set("default");
         setHidden(false);
         return goTo("swish");
       }
       case "#": {
-        setCart(new Cart());
-        setState(EMPTY);
+        set("default");
         setHidden(false);
         return goTo("transfer");
       }
       case "Backspace": {
-        if(cart.isEmpty()) return;
         if(state.canceled) return setHidden(true);
+        if(state.balanceCheck) return setHidden(true);
+        if(state.paymentFailed) return setHidden(true);
         if(state.paid) return setHidden(true);
-        return setState({canceled: true});
+        if(cart.isEmpty()) return;
+        return set("canceled");
       }
     }
   });
 
+  console.log(state);
+
   return html`
     <${Fragment}>
+      ${!state.loading && html`<${CardListener} price=${nextCart ? nextCart.price() : cart.price()} set=${set}/>`}
       <${ShoppingCart} cart=${cart}/>
       <div style=${style.overlay}>
-        ${state.add && html`<${Add} cart=${cart} setState=${setState}/>`}
         ${state.canceled && html`<${Canceled}/>`}
-        ${state.failed && html`<${Failed}/>`}
-        ${state.paying && html`<${Paying}/>`}
+        ${state.balanceCheck && html`<${BalanceCheck} balance=${state.balanceCheck.balance}/>`}
+        ${state.paymentFailed && html`<${PaymentFailed}/>`}
+        ${state.loading && html`<${Loading}/>`}
         ${state.paid && html`<${Paid} paid="${state.paid}"/>`}
       </div>
     <//>
   `;
 }
 
-function Add({cart, setState}) {
+function CardListener({price, set}) {
   useCardReader( async (card)=>{
-    if(cart.isEmpty()) return;
-
-    const price = cart.price();
-    try {
-      setState({paying: true});
-      const balance = await pay(card, price);
-      setState({paid: {price, balance}});
-    } catch(err) {
-      console.error(err);
-      setState({failed: true});
+    if(price === 0) {
+      try {
+        set("loading");
+        const balance = await cardBalance(card);
+        set("balanceCheck", balance);
+      } catch (err) {
+        console.error(err);
+        set("default");
+      }
+    } else {
+      try {
+        set("loading");
+        const balance = await pay(card, price);
+        set("paid", {price, balance});
+      } catch (err) {
+        console.error(err);
+        set("paymentFailed");
+      }
     }
   });
   return null;
 }
 
-const canceledStyled = {
+function BalanceCheck({balance}) {
+  let message, color;
+  if(balance === null){
+    message = ["Det här kortet är inte kopplat till ett konto än"];
+    color = style.gray;
+  } else if(balance < 0){
+    message = ["Det verkar vara dags att ladda kortet!", "Tryck på ladda-knappen på tangentbordet för att börja."];
+    color = style.red;
+  } else {
+    message = ["Du har en positiv kortbalans! ZKK är tacksamma 🥰"];
+    color = style.green;
+  }
+  return html`
+    <div style=${style.layer}>
+      <div style=${paidStyle}>
+        <${Typography} variant="h2">${balance || 0} kr<//>
+      </div>
+      <div style=${{...style.box, ...color}}>
+        ${message.map(m => html`<${Typography} key=${m}>${m}<//>`)}
+      </div>
+    <//>
+  `;
+}
+
+const redStyle = {
   ...style.center,
   ...style.red,
 };
 function Canceled() {
   return html`
-    <div style=${canceledStyled}>
+    <div style=${redStyle}>
       <${Typography}>Tråkigt att du ångrat dig, men kom tillbaka för mer kaffe någon annan gång!<//>
     </div>
   `;
 }
-function Failed() {
+function PaymentFailed() {
   return html`
-    <div style=${canceledStyled}>
+    <div style=${redStyle}>
       <${Typography}>Betalningen gick inte igenom...<//>
       <${Typography}>Men ta ditt fika så kan du betala för det någon annan gång!<//>
     </div>
   `;
 }
 
-const payingStyle = {
+const loadingStyle = {
   ...style.overlay,
   ...style.white
 };
-function Paying() {
+function Loading() {
   return html`
-    <div style=${payingStyle}>
+    <div style=${loadingStyle}>
       <div style=${style.center}>
         <${CircularProgress} />
       </div>
@@ -134,6 +203,7 @@ function Paying() {
 const paidStyle = {
   ...style.center,
   ...style.white,
+  height: "80px",
 };
 const paidBoxStyle = {
   ...style.green,
@@ -162,7 +232,7 @@ const shoppingCartStyle = {
 };
 function ShoppingCart({cart}) {
   return html`
-    <div style=${style.layer}>
+    <div style=${{...style.layer, minHeight: "150px"}}>
       <div style=${shoppingListStyle}>
         <${ShoppingList} cart=${cart}/>
       </div>

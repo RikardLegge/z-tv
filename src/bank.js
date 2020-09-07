@@ -115,4 +115,17 @@ async function pay(cardNumber, amount) {
   return await payFromAccount(account, amount);
 }
 
-module.exports = {pay, join, split, AlreadyJoinedError, NotJoinedError, connectToFirebase, getDB};
+async function cardBalance(cardNumber) {
+  if(!cardNumber) throw new Error("Invalid card numbe: "+ cardNumber);
+  if(!db) await connectToFirebase();
+  const card = db.collection(`cards`).doc(`${cardNumber}`);
+
+  const account = await getAccountRef(card);
+  if(!account) return null;
+
+  const data = await getAccountData(account);
+  const balance = (data && data.balance) ? data.balance : 0;
+  return balance;
+}
+
+module.exports = {pay, cardBalance, join, split, AlreadyJoinedError, NotJoinedError, connectToFirebase, getDB};

@@ -27,8 +27,8 @@ function SwishView({goBack}) {
 
   useEffect(()=>{
     let delay = hideDelay;
-    if(state.paying) delay = 60*hideDelay;
-    if(state.qr) delay = 12*hideDelay;
+    if(state.loading) delay = 60*hideDelay;
+    if(state.qr) delay = 30*hideDelay;
     const key = setTimeout(goBack, delay);
     return ()=> clearTimeout(key);
   });
@@ -49,7 +49,7 @@ function SwishView({goBack}) {
     ${state.charge && html`<${Charge} amount=${amount} setAmount=${setAmount} setState=${set}/>`}
     ${state.qr && html`<${QR} qr=${state.qr} amount=${amount} setState=${set}/>`}
     ${state.paid && html`<${Paid} paid=${state.paid} goBack=${back}/>`}
-    ${state.paying && html`<${Paying}/>`}
+    ${state.loading && html`<${Loading}/>`}
     ${state.failed && html`<${Failed} goBack=${back}/>`}
   <//>
   `;
@@ -65,13 +65,13 @@ function Failed({goBack}) {
     <div style=${canceledStyled}>
       <div style=${style.center}>
         <${Typography}>Det gick inte att ladda kortet<//>
-        <${Typography}>Om du redan hunnit swisha så är det bara att kontakta sektionskassören så löser han det<//>
+        <${Typography}>Om du redan hunnit swisha så är det bara att kontakta sektionskassören så löser hen det<//>
       </div>
     </div>
   `;
 }
 
-function Paying() {
+function Loading() {
   return html`
     <div style=${style.overlay}>
       <div style=${style.center}>
@@ -108,7 +108,7 @@ function QR({qr, amount, setState}) {
   useKeyboard(async (key)=>{
     if(key === "+") {
       try {
-        setState({paying: true});
+        setState({loading: true});
         const balance = await pay(qr.card, -amount);
         setState({paid: {balance, amount}})
       } catch (err) {
@@ -126,7 +126,8 @@ function QR({qr, amount, setState}) {
       </div>
       <${Typography} variant="h2" style=${style.center}>${amount} kr<//>
       <div style=${qrBoxStyle}>
-        <${Typography} style=${style.centerH}>Betala genom att scanna QR koden med swish. Tryck sedan på LADDA för att föra in pengarna på ditt konto<//>
+        <${Typography} style=${style.centerH}>Betala genom att scanna QR koden med swish. Tryck sedan på LADDA för att föra in pengarna på ditt konto.<//>
+        <${Typography} style=${style.centerH}>(Vi kollar inte om pengarna är betalda utan litar på dig!)<//>
       </div>
     <//>
   `;
@@ -170,7 +171,7 @@ function Charge({amount, setState, setAmount}) {
   return html`
     <div style=${style.overlay}>
       <${Typography} style=${style.box}>Vänligen slå in så mycket som du velat ladda kortet med och visa sedan upp ditt kort för läsaren<//>
-      <${Typography} variant="h2" style=${style.center}>${amount} kr<//>
+      <${Typography} variant="h2" style=${{...style.center, justifyContent: "unset"}}>${amount} kr<//>
       <div style=${warningStyle(!!warning)}>
         <${Typography}>${warning || '-'}<//>
       </div>
@@ -180,7 +181,7 @@ function Charge({amount, setState, setAmount}) {
 
 const bodyStyle = {
   width: "320px",
-  height: "320px",
+  height: "370px",
 };
 function Body() {
   return html`<div style=${bodyStyle}/>`;
