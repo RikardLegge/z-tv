@@ -7,6 +7,7 @@ class CardReader {
   constructor() {
     this.reader = null;
     this.pendingHandle = null;
+    this.hasRead = false;
   }
 
   scheduleListen(fn) {
@@ -58,6 +59,7 @@ class CardReader {
             .digest('hex')
             .substr(0, 16);
           console.log(`Read card \nNumber: ${line} \nHash: ${hash}`);
+          this.hasRead = true;
           fn(hash);
         });
       });
@@ -78,32 +80,34 @@ class CardReader {
 let reader;
 let readerFn = ()=>{};
 function useCardReader(fn) {
+  if(!reader) {
+    reader = new CardReader();
+    reader.listen((card)=>readerFn(card));
+  }
   useEffect(() => {
-    if(!reader) {
-      reader = new CardReader();
-      reader.listen((card)=>readerFn(card));
-    }
     readerFn = fn;
     return ()=> {readerFn = ()=>{}};
   });
-  useKeyboardCardReader(fn);
+  useEffect(() => {
+    if(!reader.hasRead) {
+      return keyboardCardReader(fn);
+    }
+  });
 }
 
-function useKeyboardCardReader(fn) {
-  useEffect(() => {
-    function cb (event) {
-      if(event.key === "!") {
-        event.preventDefault();
-        fn("test");
-      }
-      if(event.key === "@") {
-        event.preventDefault();
-        fn("test-2");
-      }
+function keyboardCardReader(fn) {
+  function cb (event) {
+    if(event.key === "!") {
+      event.preventDefault();
+      fn("test");
     }
-    document.body.addEventListener("keydown", cb);
-    return ()=>document.body.removeEventListener("keydown", cb);
-  });
+    if(event.key === "@") {
+      event.preventDefault();
+      fn("test-2");
+    }
+  }
+  document.body.addEventListener("keydown", cb);
+  return ()=>document.body.removeEventListener("keydown", cb);
 }
 
 module.exports = {useCardReader, CardReader};
