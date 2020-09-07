@@ -43,7 +43,8 @@ function ShoppingView({goTo, setHidden}) {
         break;
       }
       case "balanceCheck": {
-        setState({balanceCheck: {balance: value}});
+        setState({balanceCheck: value});
+        setNextCart(new Cart());
         break;
       }
       case "paymentFailed": {
@@ -54,6 +55,18 @@ function ShoppingView({goTo, setHidden}) {
       case "paid": {
         setState({paid: value});
         setNextCart(new Cart());
+        break;
+      }
+      case "register": {
+        setHidden(false);
+        setNextCart(new Cart());
+        goTo("register", value);
+        break;
+      }
+      case "swish": {
+        setHidden(false);
+        setNextCart(new Cart());
+        goTo("swish");
         break;
       }
       default: {
@@ -80,15 +93,13 @@ function ShoppingView({goTo, setHidden}) {
       case "2": return addToCart(products.Kettle);
       case "3": return addToCart(products.Cookie);
       case "+": {
-        set("default");
-        setHidden(false);
-        return goTo("swish");
+        return set("swish");
       }
-      case "#": {
-        set("default");
-        setHidden(false);
-        return goTo("transfer");
-      }
+      // case "#": {
+      //   set("default");
+      //   setHidden(false);
+      //   return goTo("transfer");
+      // }
       case "Backspace": {
         if(state.canceled) return setHidden(true);
         if(state.balanceCheck) return setHidden(true);
@@ -108,7 +119,7 @@ function ShoppingView({goTo, setHidden}) {
       <${ShoppingCart} cart=${cart}/>
       <div style=${style.overlay}>
         ${state.canceled && html`<${Canceled}/>`}
-        ${state.balanceCheck && html`<${BalanceCheck} balance=${state.balanceCheck.balance}/>`}
+        ${state.balanceCheck && html`<${BalanceCheck} set=${set} balanceCheck=${state.balanceCheck}/>`}
         ${state.paymentFailed && html`<${PaymentFailed}/>`}
         ${state.loading && html`<${Loading}/>`}
         ${state.paid && html`<${Paid} paid="${state.paid}"/>`}
@@ -123,16 +134,20 @@ function CardListener({price, set}) {
       try {
         set("loading");
         const balance = await cardBalance(card);
-        set("balanceCheck", balance);
+        set("balanceCheck", {balance, card});
       } catch (err) {
         console.error(err);
-        set("default");
+        set();
       }
     } else {
       try {
         set("loading");
         const balance = await pay(card, price);
-        set("paid", {price, balance});
+        if(balance !== false) {
+          set("paid", {price, balance});
+        } else {
+          set("register", card);
+        }
       } catch (err) {
         console.error(err);
         set("paymentFailed");
@@ -142,13 +157,15 @@ function CardListener({price, set}) {
   return null;
 }
 
-function BalanceCheck({balance}) {
+function BalanceCheck({balanceCheck, set}) {
+  const {balance, card} = balanceCheck;
   let message, color;
+  console.log(balanceCheck);
   if(balance === null){
-    message = ["Det här kortet är inte kopplat till ett konto än"];
-    color = style.gray;
+    set("register", card);
+    return null;
   } else if(balance < 0){
-    message = ["Det verkar vara dags att ladda kortet!", "Tryck på ladda-knappen på tangentbordet för att börja."];
+    message = ["Det verkar vara dags att ladda kortet!", "Tryck på ladda-knappen på tangentbordet."];
     color = style.red;
   } else {
     message = ["Du har en positiv kortbalans! ZKK är tacksamma 🥰"];
@@ -157,7 +174,7 @@ function BalanceCheck({balance}) {
   return html`
     <div style=${style.layer}>
       <div style=${paidStyle}>
-        <${Typography} variant="h2">${balance || 0} kr<//>
+        <${Typography} variant="h2">Konto: ${balance || 0} kr<//>
       </div>
       <div style=${{...style.box, ...color}}>
         ${message.map(m => html`<${Typography} key=${m}>${m}<//>`)}
@@ -213,11 +230,13 @@ function Paid({paid}) {
   return html`
     <${Fragment}>
       <div style=${paidStyle}>
-        <${Typography} variant="h2">${paid.balance} kr<//>
+        <${Typography} variant="h2">Konto: ${paid.balance} kr<//>
       </div>
       <div style=${paidBoxStyle}>
         <${Typography}>Hoppas kaffet smakar!<//>
-        <${Typography}>Du har kvar följande belopp på kontot<//>
+        ${paid.balance < 0 && html`
+            <${Typography}>Det ser ut som att det är dags att ladda kortet, vilket du kan göra genom att trycka på ladda knappen!<//>
+        `}
       </div>
     <//>
   `;

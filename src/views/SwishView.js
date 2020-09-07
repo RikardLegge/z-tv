@@ -21,36 +21,69 @@ function generateSwishCode(card, amount) {
 }
 
 const EMPTY = {charge: true};
-function SwishView({goBack}) {
+function SwishView({goTo, setHidden}) {
   const [state, setState] = useState(EMPTY);
   const [amount, setAmount] = useState(0);
+
+  function set(key, value) {
+    switch(key){
+      case "loading": {
+        setState({loading: true});
+        break;
+      }
+      case "register": {
+        setState(EMPTY);
+        goTo("register", value);
+        break;
+      }
+      case "paid": {
+        setState({paid: value});
+        break;
+      }
+      case "qr": {
+        setState({qr: value});
+        break;
+      }
+      case "failed": {
+        setState({failed: true});
+        break;
+      }
+      case "back": {
+        setHidden(true);
+        setTimeout(() => {
+          setState(EMPTY);
+          goTo('shop')
+        }, 300);
+        break;
+      }
+      default: {
+        setState(EMPTY);
+        break;
+      }
+    }
+  }
+
 
   useEffect(()=>{
     let delay = hideDelay;
     if(state.loading) delay = 60*hideDelay;
     if(state.qr) delay = 30*hideDelay;
-    const key = setTimeout(goBack, delay);
+    const key = setTimeout(back, delay);
     return ()=> clearTimeout(key);
   });
 
   function back() {
-    setState(EMPTY);
-    goBack();
-  }
-
-  function set(s) {
-    if(s.back) return back();
-    setState(s);
+    set("back");
   }
 
   return html`
   <${Fragment}>
     <${Body}/>
-    ${state.charge && html`<${Charge} amount=${amount} setAmount=${setAmount} setState=${set}/>`}
-    ${state.qr && html`<${QR} qr=${state.qr} amount=${amount} setState=${set}/>`}
-    ${state.paid && html`<${Paid} paid=${state.paid} goBack=${back}/>`}
+    ${state.charge && html`<${Charge} amount=${amount} setAmount=${setAmount} set=${set}/>`}
+    ${state.qr && html`<${QR} qr=${state.qr} amount=${amount} set=${set}/>`}
+    ${state.paid && html`<${Paid} paid=${state.paid} set=${set}/>`}
     ${state.loading && html`<${Loading}/>`}
-    ${state.failed && html`<${Failed} goBack=${back}/>`}
+    ${state.failed && html`<${Failed} set=${set}/>`}
   <//>
   `;
 }
@@ -59,8 +92,8 @@ const canceledStyled = {
   ...style.overlay,
   ...style.red,
 };
-function Failed({goBack}) {
-  useKeyboard(goBack);
+function Failed({set}) {
+  useKeyboard(()=>set('back'));
   return html`
     <div style=${canceledStyled}>
       <div style=${style.center}>
@@ -85,8 +118,8 @@ const paidBoxStyle = {
   ...style.green,
   ...style.box,
 };
-function Paid({paid, goBack}) {
-  useKeyboard(goBack);
+function Paid({paid, set}) {
+  useKeyboard(()=>set('back'));
   return html`
     <div style=${style.overlay}>
       <${Typography} variant="h2" style=${style.center}>${paid.balance} kr<//>
@@ -104,25 +137,30 @@ const qrBoxStyle = {
   ...style.gray,
   ...style.box,
 };
-function QR({qr, amount, setState}) {
+function QR({qr, amount, set}) {
+  const {card, code} = qr;
   useKeyboard(async (key)=>{
     if(key === "+") {
       try {
-        setState({loading: true});
-        const balance = await pay(qr.card, -amount);
-        setState({paid: {balance, amount}})
+        set("loading");
+        const balance = await pay(card, -amount);
+        if(balance !== false) {
+          set("paid", {balance, amount});
+        } else {
+          set("register", card);
+        }
       } catch (err) {
         console.error(err);
-        setState({failed: err})
+        set("failed", err);
       }
     }
-    if(key === "Backspace") return setState(EMPTY);
+    if(key === "Backspace") return set();
   });
 
   return html`
     <div style=${style.overlay}>
       <div style=${style.centerH}>
-        ${qr && html`<img style=${qrImageStyle} src=${qr.code}/>`}
+        ${code && html`<img style=${qrImageStyle} src=${code}/>`}
       </div>
       <${Typography} variant="h2" style=${style.center}>${amount} kr<//>
       <div style=${qrBoxStyle}>
@@ -138,15 +176,15 @@ const warningStyle = (show)=>({
   ...style.box,
   opacity: show ? 1 : 0
 });
-function Charge({amount, setState, setAmount}) {
+function Charge({amount, set, setAmount}) {
   useCardReader( async (card)=>{
     if(amount < minAmount || amount > maxAmount) return;
     try {
       const code = await generateSwishCode(card, amount);
-      setState({qr: {code, card}});
+      set("qr", {code, card});
     } catch(err) {
       console.error(err);
-      setState({failed: err})
+      set("failed", err);
     }
   });
 
@@ -158,7 +196,7 @@ function Charge({amount, setState, setAmount}) {
       return setAmount(newAmount);
     }
     if (key === "Backspace") {
-      if (amount === 0) return setState({back: true});
+      if (amount === 0) return set("back");
       const newAmount = Math.floor(amount / 10);
       return setAmount(newAmount);
     }

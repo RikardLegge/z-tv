@@ -1,12 +1,14 @@
 const firebase = require("firebase");
 const {Timestamp} = firebase.firestore;
-const account = require("../account.json");
+const accountConfig = require("../account.json");
+const appConfig = require("../app.json");
 
 let db;
 async function connectToFirebase({quiet}={}) {
   if(!quiet) console.log("connecting to database...");
-  const app = firebase.initializeApp(account.app);
-  await firebase.auth().signInWithEmailAndPassword(account.email, account.password);
+  const app = firebase.initializeApp(appConfig);
+  const {email, password} = accountConfig;
+  await firebase.auth().signInWithEmailAndPassword(email, password);
   db = app.firestore();
   if(!quiet) console.log("connected to database")
 }
@@ -102,14 +104,13 @@ async function payFromAccount(account, amount) {
 }
 
 async function pay(cardNumber, amount) {
-  if(!cardNumber) throw new Error("Invalid card numbe: "+ cardNumber);
+  if(!cardNumber) throw new Error("Invalid card number: "+ cardNumber);
   if(!db) await connectToFirebase();
   const card = db.collection(`cards`).doc(`${cardNumber}`);
 
-  let account = await getAccountRef(card);
+  const account = await getAccountRef(card);
   if(!account) {
-    account = db.collection(`accounts`).doc();
-    await card.set({account})
+    return false;
   }
 
   return await payFromAccount(account, amount);

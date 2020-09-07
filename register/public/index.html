@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Register ZKK account</title>
+
+      <!-- The core Firebase JS SDK is always required and must be listed first -->
+<!--      <script src="https://www.gstatic.com/firebasejs/7.19.1/firebase-app.js"></script>-->
+<!--      <script src="https://www.gstatic.com/firebasejs/7.19.1/firebase-firestore.js"></script>-->
+
+    <!-- update the version number as needed -->
+    <script defer src="/__/firebase/7.19.1/firebase-app.js"></script>
+    <!-- include only the Firebase features as you need -->
+    <script defer src="/__/firebase/7.19.1/firebase-firestore.js"></script>
+    <!-- initialize the SDK after all desired features are loaded -->
+    <script defer src="/__/firebase/init.js"></script>
+    <style>
+        html, body {
+            width: 100%;
+            height: 100%;
+            padding: 0;
+            margin: 0;
+            overflow: hidden;
+            font-family: Helvetica, serif;
+        }
+        #load {
+            text-align: center;
+            position: absolute;
+            width: 100%;
+            bottom: 0;
+        }
+        #email {
+            width: 100%;
+        }
+        #register {
+            margin-top:10px;
+            height: 2em;
+            font-size: 2em;
+        }
+        #center {
+            padding: 30px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+    </style>
+  </head>
+  <body>
+    <div id="center">
+        <h2>Registrera ett kort genom att skriva in din e-post adress</h2>
+        <form id="form" action="javascript:void(0);">
+        <input id="email" type="email" placeholder="E-mail"/>
+        <input id="register" type="submit" value="Registrera"/>
+        </form>
+    </div>
+    <p id="load">Firebase SDK Loading&hellip;</p>
+
+    <script>
+      const center = document.getElementById('center');
+      const form = document.getElementById('form');
+      const input = document.getElementById('email');
+      const load = document.getElementById('load');
+      const search = document.location.search.substring(1).split("&").reduce((map, part)=>{
+        const [key, value] = part.split('=');
+        map[key] = value;
+        return map;
+      }, {})
+      const cardNumber = search.card;
+      if(!cardNumber) {
+        center.outerHTML = "";
+        load.innerHTML = "Ogiltig länk"
+        document.body.style.background = "red";
+        document.body.style.color = "white";
+        document.body.style.fontSize = "100px";
+        throw new Error();
+      }
+      document.addEventListener('DOMContentLoaded', attach);
+
+      let app;
+      function attach() {
+        try {
+          app = firebase.app();
+          form.addEventListener("submit", ()=>{
+            registerAccount(cardNumber, input.value)
+              .then(success)
+              .catch(failed);
+          });
+          load.innerHTML = `
+            Genom att registrera din e-epost address med ZKK:s betaltjänst godkänner du att den associeras till ditt
+            kort och kontobalans samt att ZKK har rätt att skicka mail så som betalningspåminnelser till denna
+            e-post address. Kontakta Ztyret eller ZKK om du skulle vilja ha din e-post address borttagen.`;
+        } catch (e) {
+          console.error(e);
+          load.innerHTML = 'Error loading the Firebase SDK, check the console.';
+        }
+      }
+
+      function success() {
+        center.outerHTML = "";
+        load.innerHTML = "Registreringen lyckades"
+        document.body.style.background = "green";
+        document.body.style.color = "white";
+        document.body.style.fontSize = "100px";
+      }
+
+      function failed(ex) {
+        console.error(ex);
+        center.outerHTML = "";
+        load.innerHTML = "Registreringen misslyckades: " + ex;
+        document.body.style.background = "red";
+        document.body.style.color = "white";
+
+      }
+
+      async function registerAccount(cardNumber, email) {
+        const db = app.firestore();
+        const now = firebase.firestore.Timestamp.now();
+        const account = db.collection(`accounts`).doc(email);
+        const card = db.collection(`cards`).doc(cardNumber);
+        await account.set({
+          balance: 0,
+          lastUsed: now,
+        });
+        await card.set({account});
+      }
+    </script>
+  </body>
+</html>

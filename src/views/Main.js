@@ -6,6 +6,7 @@ const SwishView = require('./SwishView');
 const TransferView = require('./TransferView');
 const Paper = require('@material-ui/core/Paper').default;
 const style = require("./style");
+const RegisterView = require("./RegisterView");
 
 const fillStyle = {
   position: "absolute",
@@ -27,20 +28,19 @@ function Main() {
 
 function Popup() {
   const [hidden, setHidden] = useState(true);
-  const [view, setView] = useState("shop");
+  const [{view, args}, setView] = useState({view: "shop", args: []});
 
-  function goToShop() {
-    setHidden(true);
-    setTimeout(() => setView("shop"), 300);
+  function goTo(view, ...args) {
+    setView({view, args});
   }
 
   let htmlView;
   if(view === "swish") {
-    htmlView = html`<${SwishView} goBack=${goToShop}/>`;
-  } else if(view === "transfer") {
-    htmlView = html`<${TransferView} goBack=${goToShop}/>`
+    htmlView = html`<${SwishView} setHidden=${setHidden} goTo=${goTo}/>`;
+  } else if(view === "register") {
+    htmlView = html`<${RegisterView} setHidden=${setHidden} goTo=${goTo} args=${args}/>`
   } else {
-    htmlView = html`<${ShoppingView} setHidden=${setHidden} goTo=${setView}/>`;
+    htmlView = html`<${ShoppingView} setHidden=${setHidden} goTo=${goTo}/>`;
   }
 
   return html`
