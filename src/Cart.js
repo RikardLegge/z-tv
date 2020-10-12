@@ -50,6 +50,15 @@ class Cart {
     return true;
   }
 
+  asMap() {
+    const items = {};
+    for (let item of this.items) {
+      const name = item.tp.name;
+      items[name] = item.count;
+    }
+    return items;
+  }
+
   price(){
     let total = 0;
     for(const item of this.items) {

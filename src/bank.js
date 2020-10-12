@@ -36,8 +36,8 @@ async function join(cardNumber1, cardNumber2) {
     if (!account1D || !account2D) {
       throw new Error("Could not get account data");
     }
-    await payFromAccount(account1, -account2D.balance);
-    await payFromAccount(account2, account2D.balance);
+    await payFromAccount(account1, -account2D.balance, {transferFrom: 1});
+    await payFromAccount(account2, account2D.balance, {transferTo: 1});
     await card2.set({account: account1});
   } else if (account1) {
     await card2.set({account: account1});
@@ -91,19 +91,22 @@ async function setAccountBalance(account, balance) {
   return balance;
 }
 
-async function payFromAccount(account, amount) {
+async function payFromAccount(account, amount, items) {
   let data = await getAccountData(account);
   let balance = (data && data.balance) ? data.balance : 0;
   const newBalance = await setAccountBalance(account, balance - amount);
+  // const itemDocument = db.collection(`log-items`).doc();
+  // itemDocument.set(items).catch(console.error);
   db.collection(`logs`).doc().set({
     timeStamp: Timestamp.now(),
+    items: items,
     account: account,
     amount: -amount
   }).catch(console.error);
   return newBalance;
 }
 
-async function pay(cardNumber, amount) {
+async function pay(cardNumber, amount, items={}) {
   if(!cardNumber) throw new Error("Invalid card number: "+ cardNumber);
   if(!db) await connectToFirebase();
   const card = db.collection(`cards`).doc(`${cardNumber}`);
@@ -113,7 +116,7 @@ async function pay(cardNumber, amount) {
     return false;
   }
 
-  return await payFromAccount(account, amount);
+  return await payFromAccount(account, amount, items);
 }
 
 async function cardBalance(cardNumber) {

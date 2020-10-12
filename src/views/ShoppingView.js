@@ -79,7 +79,7 @@ function ShoppingView({goTo, setHidden}) {
   }
 
   useEffect(()=>{
-    let delay = hideDelay;
+    let delay = 6*hideDelay;
     if(state.add) delay = 6*hideDelay;
     if(state.loading) delay = 60*hideDelay;
     const key = setTimeout(()=>setHidden(true), delay);
@@ -92,6 +92,7 @@ function ShoppingView({goTo, setHidden}) {
       case "1": return addToCart(products.Coffee);
       case "2": return addToCart(products.Kettle);
       case "3": return addToCart(products.Cookie);
+      case "4": return addToCart(products.SandwichCake);
       case "+": {
         return set("swish");
       }
@@ -111,11 +112,9 @@ function ShoppingView({goTo, setHidden}) {
     }
   });
 
-  console.log(state);
-
   return html`
     <${Fragment}>
-      ${!state.loading && html`<${CardListener} price=${nextCart ? nextCart.price() : cart.price()} set=${set}/>`}
+      ${!state.loading && html`<${CardListener} cart=${nextCart ? nextCart : cart} set=${set}/>`}
       <${ShoppingCart} cart=${cart}/>
       <div style=${style.overlay}>
         ${state.canceled && html`<${Canceled}/>`}
@@ -128,7 +127,8 @@ function ShoppingView({goTo, setHidden}) {
   `;
 }
 
-function CardListener({price, set}) {
+function CardListener({cart, set}) {
+  const price = cart.price();
   useCardReader( async (card)=>{
     if(price === 0) {
       try {
@@ -142,7 +142,7 @@ function CardListener({price, set}) {
     } else {
       try {
         set("loading");
-        const balance = await pay(card, price);
+        const balance = await pay(card, price, cart.asMap());
         if(balance !== false) {
           set("paid", {price, balance});
         } else {

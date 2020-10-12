@@ -143,7 +143,7 @@ function QR({qr, amount, set}) {
     if(key === "+") {
       try {
         set("loading");
-        const balance = await pay(card, -amount);
+        const balance = await pay(card, -amount, {charge: 1});
         if(balance !== false) {
           set("paid", {balance, amount});
         } else {
