@@ -4,7 +4,7 @@
     "start": "node cmd/exportReport.js > export.csv"
   },
   "devDependencies": {
-    "electron": "^6.0.7",
+    "electron": "^13.6.6",
     "electron-rebuild": "^1.8.6"
   },
   "dependencies": {
